@@ -1,0 +1,27 @@
+{
+  "ai-hedge-fund-crypto": {
+    "repository": "https://github.com/51bitquant/ai-hedge-fund-crypto.git",
+    "commit": "c6750e0041cb2e528856864783585427c45cc34d",
+    "license": "MIT"
+  },
+  "CryptoTradingAgents": {
+    "repository": "https://github.com/Tomortec/CryptoTradingAgents.git",
+    "commit": "df6703a5763aaa6f6ac13ea52eaadb986c178f56",
+    "license": "Apache-2.0"
+  },
+  "Vibe-Trading": {
+    "repository": "https://github.com/HKUDS/Vibe-Trading.git",
+    "commit": "86f6012e00120e3fa5c3f0e15be8c94abe732dcf",
+    "license": "MIT"
+  },
+  "LLM_trader": {
+    "repository": "https://github.com/qrak/LLM_trader.git",
+    "commit": "652279d09334f1061994e5228bcaf9114b35eb17",
+    "license": "MIT"
+  },
+  "helm-agents": {
+    "repository": "https://github.com/QuantiaAI/helm-agents.git",
+    "commit": "244225ca75f1d402341ad7c67c2d5fbaf9f148d7",
+    "license": "Apache-2.0"
+  }
+}

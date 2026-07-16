@@ -1,0 +1,72 @@
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class CryptoBrainRequest(BaseModel):
+    symbol: str = Field(min_length=3, max_length=24, examples=["BTC_USDT"])
+    timeframe: str = Field(default="H1", min_length=1, max_length=16)
+    as_of: str = Field(default="", max_length=40)
+    market: dict[str, Any] = Field(default_factory=dict)
+    technicals: dict[str, Any] = Field(default_factory=dict)
+    derivatives: dict[str, Any] = Field(default_factory=dict)
+    onchain: dict[str, Any] = Field(default_factory=dict)
+    defi: dict[str, Any] = Field(default_factory=dict)
+    news: list[Any] = Field(default_factory=list, max_length=60)
+    social: list[Any] = Field(default_factory=list, max_length=60)
+    position: dict[str, Any] = Field(default_factory=dict)
+    portfolio: dict[str, Any] = Field(default_factory=dict)
+    history: list[dict[str, Any]] = Field(default_factory=list, max_length=50)
+    prior_reports: dict[str, Any] = Field(default_factory=dict)
+    question: str = Field(default="", max_length=3000)
+
+    @field_validator("symbol")
+    @classmethod
+    def validate_symbol(cls, value: str) -> str:
+        normalized = value.strip().upper().replace("/", "_").replace("-", "_")
+        if not re.fullmatch(r"[A-Z0-9]{2,12}_[A-Z0-9]{2,12}", normalized):
+            raise ValueError("symbol must look like BTC_USDT or ETH_USD")
+        return normalized
+
+    @field_validator("timeframe")
+    @classmethod
+    def validate_timeframe(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if not re.fullmatch(r"[SMHDW]\d{1,3}|INTRADAY|SWING|POSITION", normalized):
+            raise ValueError("timeframe must look like M15, H1, D1, SWING or POSITION")
+        return normalized
+
+    @model_validator(mode="after")
+    def require_evidence(self) -> "CryptoBrainRequest":
+        fields = (
+            self.market,
+            self.technicals,
+            self.derivatives,
+            self.onchain,
+            self.defi,
+            self.news,
+            self.social,
+            self.position,
+            self.portfolio,
+            self.history,
+            self.prior_reports,
+        )
+        if not any(fields):
+            raise ValueError("at least one evidence field is required")
+        return self
+
+    def compact_json(self) -> str:
+        return json.dumps(self.model_dump(), ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+class BrainResponse(BaseModel):
+    ok: bool = True
+    endpoint: str
+    request_id: str
+    model: str
+    latency_ms: int
+    result: dict[str, Any]

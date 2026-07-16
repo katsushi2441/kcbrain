@@ -1,0 +1,3 @@
+<?php
+define('KCBRAIN_API_BASE', getenv('KCBRAIN_API_BASE') ?: 'http://exbridge.ddns.net:18328');
+define('KCBRAIN_API_TOKEN', getenv('KCBRAIN_API_TOKEN') ?: '');

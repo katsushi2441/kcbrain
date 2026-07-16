@@ -1,0 +1,15 @@
+[submodule "vendor/ai-hedge-fund-crypto"]
+	path = vendor/ai-hedge-fund-crypto
+	url = https://github.com/51bitquant/ai-hedge-fund-crypto.git
+[submodule "vendor/CryptoTradingAgents"]
+	path = vendor/CryptoTradingAgents
+	url = https://github.com/Tomortec/CryptoTradingAgents.git
+[submodule "vendor/Vibe-Trading"]
+	path = vendor/Vibe-Trading
+	url = https://github.com/HKUDS/Vibe-Trading.git
+[submodule "vendor/LLM_trader"]
+	path = vendor/LLM_trader
+	url = https://github.com/qrak/LLM_trader.git
+[submodule "vendor/helm-agents"]
+	path = vendor/helm-agents
+	url = https://github.com/QuantiaAI/helm-agents.git
