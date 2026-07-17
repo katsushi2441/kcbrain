@@ -15,3 +15,8 @@ def test_invalid_json_raises():
 def test_missing_required_result_fields_raise():
     with pytest.raises(BrainError, match="missing required fields"):
         validate_result("technical", {"signal": "neutral"})
+
+
+def test_market_result_contract_is_validated():
+    with pytest.raises(BrainError, match="missing required fields"):
+        validate_result("market_opportunity_ranking", {"ranking": []})

@@ -26,6 +26,16 @@
 - `POST /v1/review/trade`
 - `POST /v1/analyze/full`
 
+## Market intelligence APIs
+
+- `POST /v1/market/opportunity-ranking` - 複数銘柄のリスク調整後機会ランキング
+- `POST /v1/market/flow-ranking` - 資金流の方向、強度、継続性ランキング
+- `POST /v1/market/anomaly` - 価格、出来高、OI、funding、清算などの異常検出
+- `POST /v1/market/liquidation-risk` - ロング・ショート別の清算連鎖リスク
+- `POST /v1/signal/pair/{symbol}` - 個別銘柄の根拠付き方向シグナル
+
+ランキング系APIは`assets`へ最大40銘柄の観測値を渡します。個別シグナルはURLとJSON本文の`symbol`が一致しない場合、誤判定防止のため拒否します。いずれも入力された証拠だけを評価し、市場データの自動取得や注文実行は行いません。
+
 ## Setup
 
 ```bash

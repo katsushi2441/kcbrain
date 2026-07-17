@@ -66,6 +66,11 @@ $endpoint_map = array(
     'portfolio' => '/v1/decide/portfolio',
     'review' => '/v1/review/trade',
     'full' => '/v1/analyze/full',
+    'opportunity-ranking' => '/v1/market/opportunity-ranking',
+    'flow-ranking' => '/v1/market/flow-ranking',
+    'market-anomaly' => '/v1/market/anomaly',
+    'liquidation-risk' => '/v1/market/liquidation-risk',
+    'pair-signal' => '/v1/signal/pair/{symbol}',
     'aihf-portfolio' => '/v1/vendor/ai-hedge-fund-crypto/portfolio',
     'crypto-agents' => '/v1/vendor/crypto-trading-agents/debate',
     'vibe-research' => '/v1/vendor/vibe-trading/research',
@@ -111,12 +116,22 @@ if (isset($_GET['proxy'])) {
             echo json_encode(array('ok' => false, 'detail' => 'JSONを確認してください'), JSON_UNESCAPED_UNICODE);
             exit;
         }
+        $api_path = $endpoint_map[$endpoint];
+        if ($endpoint === 'pair-signal') {
+            $symbol = isset($payload['symbol']) ? strtoupper(str_replace(array('/', '-'), '_', trim((string)$payload['symbol']))) : '';
+            if (!preg_match('/^[A-Z0-9]{2,12}_[A-Z0-9]{2,12}$/', $symbol)) {
+                http_response_code(422);
+                echo json_encode(array('ok' => false, 'detail' => 'symbolを確認してください'), JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            $api_path = str_replace('{symbol}', rawurlencode($symbol), $api_path);
+        }
         $slow = in_array($endpoint, array('crypto-agents', 'vibe-research', 'helm-consensus'), true);
         $timeout = $slow ? 1800 : 600;
         if ($slow) {
             @set_time_limit(0);
         }
-        $response = kcb_api('POST', $endpoint_map[$endpoint], $payload, $timeout);
+        $response = kcb_api('POST', $api_path, $payload, $timeout);
     } else {
         $response = array('status' => 404, 'data' => array('ok' => false, 'detail' => 'unknown proxy'));
     }
@@ -173,6 +188,14 @@ footer{position:relative;z-index:1;text-align:center;color:var(--muted);font-siz
           <button class="api-btn" data-key="review" data-path="/v1/review/trade">取引レビュー</button>
           <button class="api-btn" data-key="full" data-path="/v1/analyze/full">総合分析</button>
         </div>
+        <select class="vendor-select" id="marketSelect">
+          <option value="">Market Intelligence APIを選択</option>
+          <option value="opportunity-ranking" data-path="/v1/market/opportunity-ranking">市場機会ランキング</option>
+          <option value="flow-ranking" data-path="/v1/market/flow-ranking">資金フローランキング</option>
+          <option value="market-anomaly" data-path="/v1/market/anomaly">市場異常検出</option>
+          <option value="liquidation-risk" data-path="/v1/market/liquidation-risk">清算連鎖リスク</option>
+          <option value="pair-signal" data-path="/v1/signal/pair/{symbol}">個別銘柄シグナル</option>
+        </select>
         <select class="vendor-select" id="vendorSelect">
           <option value="">OSS Intelligence APIを選択</option>
           <option value="aihf-portfolio" data-path="/v1/vendor/ai-hedge-fund-crypto/portfolio">AI Hedge Fund Crypto: ポートフォリオ</option>
@@ -200,13 +223,15 @@ footer{position:relative;z-index:1;text-align:center;color:var(--muted);font-siz
 const csrf=<?php echo json_encode($csrf, JSON_UNESCAPED_SLASHES); ?>;
 const presets={
 btc:{symbol:"BTC_USDT",timeframe:"H1",as_of:new Date().toISOString(),market:{price:64000,volume_24h:24000000000,spread_bps:1.2},technicals:{return_1h_pct:0.18,return_24h_pct:1.4,rsi_14:57.2,ema_20:63500,ema_50:62100,support:62000,resistance:66000},derivatives:{funding_rate_8h:0.0001,open_interest_24h_change_pct:2.1,long_short_ratio:1.04},onchain:{exchange_netflow_btc:-1200,stablecoin_supply_7d_change_pct:0.8},defi:{tvl_7d_change_pct:1.1},news:[{title:"Spot ETF net inflows increased",sentiment:"positive"}],social:[{source:"aggregate",sentiment:"neutral"}],position:{side:"flat"},portfolio:{cash:100000,max_position_value:10000,positions:{}},history:[],prior_reports:{},question:"次の24時間の判断材料を整理"},
-eth:{symbol:"ETH_USDT",timeframe:"H4",as_of:new Date().toISOString(),market:{price:3400,volume_24h:12000000000,spread_bps:1.5},technicals:{return_4h_pct:-0.3,return_24h_pct:0.7,rsi_14:51.4,ema_20:3380,ema_50:3310,support:3250,resistance:3550},derivatives:{funding_rate_8h:0.00005,open_interest_24h_change_pct:-0.8},onchain:{exchange_netflow_eth:-18000,staking_netflow_7d:12000},defi:{ethereum_tvl_7d_change_pct:1.6},news:[],social:[],position:{side:"long",unrealized_pct:2.4},portfolio:{cash:75000,max_position_value:12000,positions:{ETH_USDT:{side:"long",units:2}}},history:[],prior_reports:{},question:"保有継続か縮小かを評価"}
+eth:{symbol:"ETH_USDT",timeframe:"H4",as_of:new Date().toISOString(),market:{price:3400,volume_24h:12000000000,spread_bps:1.5},technicals:{return_4h_pct:-0.3,return_24h_pct:0.7,rsi_14:51.4,ema_20:3380,ema_50:3310,support:3250,resistance:3550},derivatives:{funding_rate_8h:0.00005,open_interest_24h_change_pct:-0.8},onchain:{exchange_netflow_eth:-18000,staking_netflow_7d:12000},defi:{ethereum_tvl_7d_change_pct:1.6},news:[],social:[],position:{side:"long",unrealized_pct:2.4},portfolio:{cash:75000,max_position_value:12000,positions:{ETH_USDT:{side:"long",units:2}}},history:[],prior_reports:{},question:"保有継続か縮小かを評価"},
+market:{timeframe:"H1",as_of:new Date().toISOString(),market_context:{btc_dominance_pct:54.2,total_market_return_24h_pct:1.1},assets:[{symbol:"BTC_USDT",market:{price:64000,volume_24h:24000000000,return_24h_pct:1.4},technicals:{rsi_14:57.2},derivatives:{funding_rate_8h:0.0001,open_interest_24h_change_pct:2.1,liquidations_1h_usd:4200000},onchain:{exchange_netflow:-1200}},{symbol:"ETH_USDT",market:{price:3400,volume_24h:12000000000,return_24h_pct:0.7},technicals:{rsi_14:51.4},derivatives:{funding_rate_8h:0.00005,open_interest_24h_change_pct:-0.8,liquidations_1h_usd:2100000},onchain:{exchange_netflow:-18000}},{symbol:"SOL_USDT",market:{price:148,volume_24h:2800000000,return_24h_pct:3.8},technicals:{rsi_14:68.1},derivatives:{funding_rate_8h:0.00032,open_interest_24h_change_pct:11.4,liquidations_1h_usd:7800000},social:[{sentiment:"greed",mention_change_pct:42}]}],question:"機会、資金フロー、異常、清算リスクを比較"}
 };
 let endpoint="technical";
 const editor=document.querySelector('#payload'),result=document.querySelector('#result'),run=document.querySelector('#runBtn');
 function setPreset(value){editor.value=JSON.stringify(value,null,2)}setPreset(presets.btc);
-document.querySelectorAll('.api-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelector('#vendorSelect').value='';endpoint=btn.dataset.key;document.querySelector('#endpointPath').textContent=btn.dataset.path}));
-document.querySelector('#vendorSelect').addEventListener('change',e=>{if(!e.target.value)return;document.querySelectorAll('.api-btn').forEach(x=>x.classList.remove('active'));endpoint=e.target.value;const option=e.target.options[e.target.selectedIndex];document.querySelector('#endpointPath').textContent=option.dataset.path;if(!editor.value.trim()||!editor.value.includes('"market"'))setPreset(presets.btc)});
+document.querySelectorAll('.api-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.api-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelector('#vendorSelect').value='';document.querySelector('#marketSelect').value='';endpoint=btn.dataset.key;document.querySelector('#endpointPath').textContent=btn.dataset.path}));
+document.querySelector('#vendorSelect').addEventListener('change',e=>{if(!e.target.value)return;document.querySelectorAll('.api-btn').forEach(x=>x.classList.remove('active'));document.querySelector('#marketSelect').value='';endpoint=e.target.value;const option=e.target.options[e.target.selectedIndex];document.querySelector('#endpointPath').textContent=option.dataset.path;if(!editor.value.trim()||!editor.value.includes('"market"'))setPreset(presets.btc)});
+document.querySelector('#marketSelect').addEventListener('change',e=>{if(!e.target.value)return;document.querySelectorAll('.api-btn').forEach(x=>x.classList.remove('active'));document.querySelector('#vendorSelect').value='';endpoint=e.target.value;const option=e.target.options[e.target.selectedIndex];document.querySelector('#endpointPath').textContent=option.dataset.path;setPreset(endpoint==='pair-signal'?presets.btc:presets.market)});
 document.querySelector('#btcPreset').onclick=()=>setPreset(presets.btc);document.querySelector('#ethPreset').onclick=()=>setPreset(presets.eth);
 document.querySelector('#formatBtn').onclick=()=>{try{setPreset(JSON.parse(editor.value))}catch(e){showError('JSON: '+e.message)}};
 function showError(message){result.className='result error';result.textContent=message;document.querySelector('#statusMetric').textContent='ERROR'}

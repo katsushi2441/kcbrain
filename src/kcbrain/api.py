@@ -11,7 +11,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from . import __version__
 from .config import settings
 from .ollama import BrainError, CryptoBrain
-from .schemas import BrainResponse, CryptoBrainRequest
+from .schemas import BrainResponse, CryptoBrainRequest, MarketIntelligenceRequest, normalize_symbol
 from .vendor_adapters import (
     AiHedgeFundCryptoAdapter,
     CryptoTradingAgentsAdapter,
@@ -85,6 +85,11 @@ def meta() -> dict:
             "/v1/decide/portfolio",
             "/v1/review/trade",
             "/v1/analyze/full",
+            "/v1/market/opportunity-ranking",
+            "/v1/market/flow-ranking",
+            "/v1/market/anomaly",
+            "/v1/market/liquidation-risk",
+            "/v1/signal/pair/{symbol}",
             "/v1/vendor/ai-hedge-fund-crypto/portfolio",
             "/v1/vendor/crypto-trading-agents/debate",
             "/v1/vendor/vibe-trading/research",
@@ -105,7 +110,7 @@ def meta() -> dict:
     }
 
 
-def run(task: str, endpoint: str, payload: CryptoBrainRequest) -> BrainResponse:
+def run(task: str, endpoint: str, payload: CryptoBrainRequest | MarketIntelligenceRequest) -> BrainResponse:
     started = time.monotonic()
     try:
         result = brain.analyze(task, payload)
@@ -155,6 +160,38 @@ for route, task_name in {
     "/v1/analyze/full": "full",
 }.items():
     protected_post(route, task_name)
+
+
+def protected_market_post(path: str, task: str):
+    def endpoint(payload: MarketIntelligenceRequest):
+        return run(task, path, payload)
+
+    endpoint.__name__ = f"run_{task}"
+    app.post(path, response_model=BrainResponse, dependencies=[Depends(require_token)])(endpoint)
+
+
+for route, task_name in {
+    "/v1/market/opportunity-ranking": "market_opportunity_ranking",
+    "/v1/market/flow-ranking": "market_flow_ranking",
+    "/v1/market/anomaly": "market_anomaly",
+    "/v1/market/liquidation-risk": "market_liquidation_risk",
+}.items():
+    protected_market_post(route, task_name)
+
+
+@app.post(
+    "/v1/signal/pair/{symbol}",
+    response_model=BrainResponse,
+    dependencies=[Depends(require_token)],
+)
+def pair_signal(symbol: str, payload: CryptoBrainRequest):
+    try:
+        path_symbol = normalize_symbol(symbol)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    if path_symbol != payload.symbol:
+        raise HTTPException(422, "path symbol must match payload symbol")
+    return run("pair_signal", f"/v1/signal/pair/{path_symbol}", payload)
 
 
 @app.post(

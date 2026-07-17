@@ -9,7 +9,7 @@ import requests
 
 from .config import Settings, settings
 from .prompts import build_prompt
-from .schemas import CryptoBrainRequest
+from .schemas import CryptoBrainRequest, MarketIntelligenceRequest
 
 
 class BrainError(RuntimeError):
@@ -26,6 +26,11 @@ REQUIRED_RESULT_KEYS = {
     "portfolio": {"action", "confidence", "rationale"},
     "review": {"process_quality", "classification", "lesson", "next_rule"},
     "full": {"technical", "onchain", "sentiment", "debate", "trade", "risk"},
+    "market_opportunity_ranking": {"ranking", "market_summary", "missing_data"},
+    "market_flow_ranking": {"ranking", "market_summary", "missing_data"},
+    "market_anomaly": {"anomalies", "normal_assets", "market_summary", "missing_data"},
+    "market_liquidation_risk": {"ranking", "systemic_risk", "market_summary"},
+    "pair_signal": {"symbol", "direction", "action", "confidence", "invalidation", "risk_flags"},
 }
 
 
@@ -72,7 +77,7 @@ class CryptoBrain:
         except Exception as exc:
             return {"reachable": False, "model_available": False, "error": str(exc)[:200]}
 
-    def analyze(self, task: str, request: CryptoBrainRequest) -> dict[str, Any]:
+    def analyze(self, task: str, request: CryptoBrainRequest | MarketIntelligenceRequest) -> dict[str, Any]:
         evidence = request.compact_json()
         return validate_result(task, self.generate_json(build_prompt(task, evidence)))
 

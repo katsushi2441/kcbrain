@@ -12,6 +12,16 @@ Kurage Crypto Brain exposes structured crypto-market intelligence from five pinn
 
 Every response identifies the upstream repository, pinned commit, license, and source feature. There are no silent model or template fallbacks.
 
+## Market intelligence APIs
+
+- `POST /v1/market/opportunity-ranking`
+- `POST /v1/market/flow-ranking`
+- `POST /v1/market/anomaly`
+- `POST /v1/market/liquidation-risk`
+- `POST /v1/signal/pair/{symbol}`
+
+Ranking endpoints accept up to 40 caller-supplied asset snapshots. Pair signals reject requests when the URL symbol and JSON symbol differ. These APIs analyze supplied evidence only; they do not fetch market data or execute orders.
+
 ## Run
 
 ```bash
