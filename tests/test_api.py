@@ -32,6 +32,8 @@ def test_health(monkeypatch):
     response = TestClient(api.app).get("/health")
     assert response.status_code == 200
     assert response.json()["ok"] is True
+    assert response.json()["provider"] == api.brain.provider
+    assert response.json()["llm"]["reachable"] is True
     assert all(vendor["installed"] for vendor in response.json()["vendors"].values())
 
 
@@ -70,7 +72,7 @@ def test_chat_completions_returns_openai_contract(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert body["object"] == "chat.completion"
-    assert body["model"] == api.settings.ollama_model
+    assert body["model"] == api.brain.model
     assert body["choices"][0]["message"]["content"].endswith('{"action":"hold"}')
     assert body["usage"]["total_tokens"] == 20
 

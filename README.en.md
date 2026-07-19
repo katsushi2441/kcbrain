@@ -1,6 +1,6 @@
 # Kurage Crypto Brain
 
-Kurage Crypto Brain exposes structured crypto-market intelligence from five pinned open-source agent frameworks through a Gemma 4 API. It reads upstream prompts, YAML agent definitions, and response contracts at runtime while replacing the LLM transport with local Ollama.
+Kurage Crypto Brain exposes structured crypto-market intelligence from five pinned open-source agent frameworks. Its LLM transport can be switched between local Gemma 4 and DeepSeek V4 Flash. It reads upstream prompts, YAML agent definitions, and response contracts at runtime.
 
 ## Vendor APIs
 
@@ -37,5 +37,22 @@ python3 -m venv .venv
 cp .env.sample .env
 .venv/bin/uvicorn kcbrain.api:app --host 0.0.0.0 --port 18328
 ```
+
+Use local Gemma 4 (the default):
+
+```dotenv
+KCBRAIN_LLM_PROVIDER=ollama
+KCBRAIN_OLLAMA_MODEL=gemma4:12b-it-qat
+```
+
+Use DeepSeek V4 Flash and restart the service:
+
+```dotenv
+KCBRAIN_LLM_PROVIDER=deepseek
+KCBRAIN_DEEPSEEK_API_KEY=
+KCBRAIN_DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+Gemma requests always set `think: false`; DeepSeek requests disable thinking explicitly. kcbrain never falls back silently to the other provider. Keep the DeepSeek API key in `.env`; it is never sent to the browser or committed to Git.
 
 The service contains no exchange credentials, wallet access, or order execution. It produces decision support only.

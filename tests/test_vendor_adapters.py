@@ -12,6 +12,8 @@ from kcbrain.vendor_adapters import (
 class FakeBrain:
     def __init__(self):
         self.prompts = []
+        self.provider = "ollama"
+        self.model = "gemma4:12b-it-qat"
 
     def generate_json(self, prompt, max_tokens=2200):
         self.prompts.append(prompt)

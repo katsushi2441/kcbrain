@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kcbrain"
-version = "0.3.0"
-description = "Kurage Crypto Brain - vendored crypto intelligence APIs powered by Gemma"
+version = "0.4.0"
+description = "Kurage Crypto Brain - vendored crypto intelligence APIs with selectable LLM transport"
 requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115,<1",

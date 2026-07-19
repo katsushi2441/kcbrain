@@ -2,7 +2,7 @@
 
 [English README](README.en.md)
 
-暗号資産の取引ボディから独立して利用できる、Gemma 4による構造化判断API集です。5つのOSSを固定コミットで`vendor/`へ配置し、実際の上流プロンプト、YAMLエージェント定義、応答契約を暗号資産向けHTTP APIとして実行します。
+暗号資産の取引ボディから独立して利用できる構造化判断API集です。ローカルのGemma 4またはDeepSeek V4 Flashを設定で選択できます。5つのOSSを固定コミットで`vendor/`へ配置し、実際の上流プロンプト、YAMLエージェント定義、応答契約を暗号資産向けHTTP APIとして実行します。
 
 ## Vendor intelligence APIs
 
@@ -28,7 +28,7 @@
 
 ## NOFX integration
 
-`POST /v1/chat/completions`は、NOFXが生成した市場データ、戦略プロンプト、出力契約をGemma 4へ渡すOpenAI互換入口です。kcbrainは応答本文を加工せず返し、NOFX側が判断JSONの検証、リスク制御、取引所接続、注文実行を担当します。
+`POST /v1/chat/completions`は、NOFXが生成した市場データ、戦略プロンプト、出力契約を選択中のLLMへ渡すOpenAI互換入口です。kcbrainは応答本文を加工せず返し、NOFX側が判断JSONの検証、リスク制御、取引所接続、注文実行を担当します。
 
 NOFXのAIモデル設定で`Kurage Crypto Brain`を選び、kcbrainと同じ`KCBRAIN_API_TOKEN`をAPI Key欄へ設定します。同一ホストで動かす場合、接続先とモデル名は既定値のままで利用できます。
 
@@ -49,12 +49,27 @@ git submodule update --init --recursive
 python3 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
 cp .env.sample .env
-# KCBRAIN_API_TOKENを設定
+# KCBRAIN_API_TOKENと利用するLLMを設定
 set -a; source .env; set +a
 .venv/bin/uvicorn kcbrain.api:app --host 0.0.0.0 --port 18328
 ```
 
-Ollamaモデルは`gemma4:12b-it-qat`です。すべての呼び出しで`think: false`を指定します。
+ローカルGemma 4を使う既定設定です。
+
+```dotenv
+KCBRAIN_LLM_PROVIDER=ollama
+KCBRAIN_OLLAMA_MODEL=gemma4:12b-it-qat
+```
+
+DeepSeek V4 Flashへ切り替える場合は次を設定し、サービスを再起動します。
+
+```dotenv
+KCBRAIN_LLM_PROVIDER=deepseek
+KCBRAIN_DEEPSEEK_API_KEY=
+KCBRAIN_DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+Gemma 4にはすべての呼び出しで`think: false`を指定し、DeepSeek V4 Flashはthinkingを無効にして呼び出します。選択したプロバイダーが失敗しても、別モデルへ自動フォールバックしません。DeepSeek APIキーは`.env`だけに保存し、ブラウザやGitへ公開しません。
 
 ## Public test UI
 

@@ -35,7 +35,7 @@ from .vendor_adapters import (
 app = FastAPI(
     title="Kurage Crypto Brain API",
     version=__version__,
-    description="Vendored Gemma 4 crypto intelligence APIs. No exchange execution.",
+    description="Vendored crypto intelligence APIs with selectable LLM transport. No exchange execution.",
 )
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 brain = CryptoBrain(settings)
@@ -73,21 +73,25 @@ def require_token(
 @app.get("/health")
 def health() -> dict:
     status = brain.health()
-    return {
+    result = {
         "ok": bool(status.get("reachable") and status.get("model_available")),
         "service": "kcbrain",
         "version": __version__,
-        "model": settings.ollama_model,
-        "ollama": status,
+        "provider": brain.provider,
+        "model": brain.model,
+        "llm": status,
         "vendors": vendor_status(),
     }
+    result[brain.provider] = status
+    return result
 
 
 @app.get("/v1/meta")
 def meta() -> dict:
     return {
         "service": "Kurage Crypto Brain",
-        "model": settings.ollama_model,
+        "provider": brain.provider,
+        "model": brain.model,
         "exchange_execution": False,
         "wallet_access": False,
         "fallback": False,
@@ -117,7 +121,7 @@ def meta() -> dict:
         "notes": {
             "vendor_contracts": (
                 "Adapters read pinned upstream prompts, YAML presets, and response contracts at runtime. "
-                "Only the LLM transport is replaced with local Gemma 4."
+                "The LLM transport is selected by KCBRAIN_LLM_PROVIDER."
             ),
             "nofx": (
                 "NoFX can use /v1/chat/completions as its kcbrain model provider. Exchange execution, "
@@ -144,7 +148,7 @@ def chat_completions(payload: ChatCompletionRequest) -> ChatCompletionResponse:
     return ChatCompletionResponse(
         id=f"chatcmpl-{uuid.uuid4().hex[:16]}",
         created=int(time.time()),
-        model=settings.ollama_model,
+        model=brain.model,
         choices=[
             ChatCompletionChoice(
                 message=ChatCompletionMessage(content=result["content"]),
@@ -167,7 +171,7 @@ def run(task: str, endpoint: str, payload: CryptoBrainRequest | MarketIntelligen
     return BrainResponse(
         endpoint=endpoint,
         request_id=uuid.uuid4().hex[:16],
-        model=settings.ollama_model,
+        model=brain.model,
         latency_ms=round((time.monotonic() - started) * 1000),
         result=result,
     )
@@ -182,7 +186,7 @@ def run_vendor(endpoint: str, operation: Callable[[], dict]) -> BrainResponse:
     return BrainResponse(
         endpoint=endpoint,
         request_id=uuid.uuid4().hex[:16],
-        model=settings.ollama_model,
+        model=brain.model,
         latency_ms=round((time.monotonic() - started) * 1000),
         result=result,
     )

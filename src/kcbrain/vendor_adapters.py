@@ -86,7 +86,7 @@ class _SafeFormat(dict):
 
 
 class AiHedgeFundCryptoAdapter:
-    """Runs the exact upstream portfolio-manager prompt with local Gemma transport."""
+    """Runs the exact upstream portfolio-manager prompt with the selected LLM transport."""
 
     def __init__(self, brain: CryptoBrain) -> None:
         self.brain = brain
@@ -135,7 +135,7 @@ class AiHedgeFundCryptoAdapter:
         return {
             "vendor": UPSTREAM["ai-hedge-fund-crypto"],
             "function": "src.graph.portfolio_management_node.generate_trading_decision",
-            "transport": "local Gemma 4",
+            "transport": f"{self.brain.provider}:{self.brain.model}",
             "output": output,
         }
 

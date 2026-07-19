@@ -96,3 +96,119 @@ def test_chat_calls_ollama_without_thinking(monkeypatch):
     assert payload["think"] is False
     assert payload["stream"] is False
     assert payload["options"] == {"temperature": 0.3, "num_predict": 900}
+
+
+def test_chat_calls_deepseek_v4_flash_without_thinking(monkeypatch):
+    config = Settings(
+        host="127.0.0.1",
+        port=18328,
+        api_token="secret",
+        allowed_client_ips=frozenset({"127.0.0.1"}),
+        ollama_url="http://ollama.test",
+        ollama_model="gemma4:12b-it-qat",
+        ollama_timeout=30,
+        max_input_chars=1000,
+        llm_provider="deepseek",
+        deepseek_base_url="https://deepseek.test",
+        deepseek_api_key="deepseek-secret",
+        deepseek_model="deepseek-v4-flash",
+        deepseek_timeout=45,
+    )
+    brain = CryptoBrain(config)
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "choices": [{"message": {"content": "decision"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 13, "completion_tokens": 5, "total_tokens": 18},
+    }
+    post = Mock(return_value=response)
+    monkeypatch.setattr("kcbrain.ollama.requests.post", post)
+
+    result = brain.chat([{"role": "user", "content": "BTC"}], temperature=0.3, max_tokens=900)
+
+    assert result == {
+        "content": "decision",
+        "prompt_tokens": 13,
+        "completion_tokens": 5,
+        "total_tokens": 18,
+    }
+    assert post.call_args.args[0] == "https://deepseek.test/chat/completions"
+    assert post.call_args.kwargs["headers"]["Authorization"] == "Bearer deepseek-secret"
+    payload = post.call_args.kwargs["json"]
+    assert payload["model"] == "deepseek-v4-flash"
+    assert payload["thinking"] == {"type": "disabled"}
+    assert payload["temperature"] == 0.3
+    assert payload["max_tokens"] == 900
+    assert "response_format" not in payload
+
+
+def test_generate_json_uses_deepseek_json_mode(monkeypatch):
+    config = Settings(
+        host="127.0.0.1",
+        port=18328,
+        api_token="secret",
+        allowed_client_ips=frozenset({"127.0.0.1"}),
+        ollama_url="http://ollama.test",
+        ollama_model="gemma4:12b-it-qat",
+        ollama_timeout=30,
+        max_input_chars=1000,
+        llm_provider="deepseek",
+        deepseek_base_url="https://deepseek.test",
+        deepseek_api_key="deepseek-secret",
+        deepseek_model="deepseek-v4-flash",
+        deepseek_timeout=45,
+    )
+    brain = CryptoBrain(config)
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "choices": [{"message": {"content": '{"signal":"neutral"}'}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 4, "total_tokens": 14},
+    }
+    post = Mock(return_value=response)
+    monkeypatch.setattr("kcbrain.ollama.requests.post", post)
+
+    result = brain.generate_json("Return a market signal.")
+
+    assert result == {"signal": "neutral"}
+    payload = post.call_args.kwargs["json"]
+    assert payload["response_format"] == {"type": "json_object"}
+    assert "JSON" in payload["messages"][0]["content"]
+
+
+def test_deepseek_health_checks_configured_model(monkeypatch):
+    config = Settings(
+        host="127.0.0.1",
+        port=18328,
+        api_token="secret",
+        allowed_client_ips=frozenset({"127.0.0.1"}),
+        ollama_url="http://ollama.test",
+        ollama_model="gemma4:12b-it-qat",
+        ollama_timeout=30,
+        max_input_chars=1000,
+        llm_provider="deepseek",
+        deepseek_base_url="https://deepseek.test",
+        deepseek_api_key="deepseek-secret",
+        deepseek_model="deepseek-v4-flash",
+        deepseek_timeout=45,
+    )
+    brain = CryptoBrain(config)
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "data": [
+            {"id": "deepseek-v4-flash"},
+            {"id": "deepseek-v4-pro"},
+        ]
+    }
+    get = Mock(return_value=response)
+    monkeypatch.setattr("kcbrain.ollama.requests.get", get)
+
+    health = brain.health()
+
+    assert health == {
+        "provider": "deepseek",
+        "reachable": True,
+        "model_available": True,
+        "models": ["deepseek-v4-flash", "deepseek-v4-pro"],
+    }

@@ -144,8 +144,8 @@ if (isset($_GET['proxy'])) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kurage Crypto Brain | Gemma 暗号資産判断API</title>
-<meta name="description" content="Gemma 4を使った暗号資産分析・討論・売買判断・リスク判定APIのテストコンソール。">
+<title>Kurage Crypto Brain | 暗号資産判断API</title>
+<meta name="description" content="選択したLLMを使った暗号資産分析・討論・売買判断・リスク判定APIのテストコンソール。">
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23008da3'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-family='sans-serif' font-size='20' font-weight='700' fill='white'%3EKCB%3C/text%3E%3C/svg%3E">
 <style>
@@ -170,14 +170,14 @@ footer{position:relative;z-index:1;text-align:center;color:var(--muted);font-siz
 </head>
 <body>
 <header>
-  <div class="brand"><div class="mark">KCB</div><div><strong>Kurage Crypto Brain</strong><small>GEMMA CRYPTO API</small></div></div>
+  <div class="brand"><div class="mark">KCB</div><div><strong>Kurage Crypto Brain</strong><small>SELECTABLE LLM API</small></div></div>
   <div class="user"><span><?php echo $logged_in ? kcb_h($auth['session_user']) : 'guest'; ?></span><?php if ($logged_in): ?><a href="?logout=1">ログアウト</a><?php else: ?><a href="?login=1">ログイン</a><?php endif; ?></div>
 </header>
 <?php if (!$is_admin): ?>
-<main class="shell"><div class="login-box"><h2>管理者用APIテスト画面</h2><p>Gemma 暗号資産判断APIの実行には、共通管理者ログインが必要です。</p><a href="?login=1">共通ログインへ</a></div></main>
+<main class="shell"><div class="login-box"><h2>管理者用APIテスト画面</h2><p>暗号資産判断APIの実行には、共通管理者ログインが必要です。</p><a href="?login=1">共通ログインへ</a></div></main>
 <?php else: ?>
 <main class="shell">
-  <div class="intro"><div><h1>Crypto Intelligence Workbench</h1><p>構造化した市場情報をGemma 4へ渡し、分析役ごとのJSON判断を確認します。注文は実行しません。</p></div><div class="health"><i class="dot" id="healthDot"></i><span id="healthText">API確認中</span></div></div>
+  <div class="intro"><div><h1>Crypto Intelligence Workbench</h1><p>構造化した市場情報を設定済みLLMへ渡し、分析役ごとの判断を確認します。注文は実行しません。</p></div><div class="health"><i class="dot" id="healthDot"></i><span id="healthText">API確認中</span></div></div>
   <div class="workspace">
     <section class="panel">
       <div class="panel-head"><strong>Request</strong><span id="endpointPath">/v1/analyze/technical</span></div>
@@ -223,7 +223,7 @@ footer{position:relative;z-index:1;text-align:center;color:var(--muted);font-siz
       </div>
     </section>
     <section class="panel">
-      <div class="panel-head"><strong>Response</strong><div class="metrics"><span id="statusMetric">READY</span><span id="latencyMetric">- ms</span><span id="modelMetric">gemma4:12b</span></div></div>
+      <div class="panel-head"><strong>Response</strong><div class="metrics"><span id="statusMetric">READY</span><span id="latencyMetric">- ms</span><span id="modelMetric">LLM</span></div></div>
       <div class="result-wrap"><div class="result-view empty" id="resultView">「テクニカル分析を実行」を押すと、ここに結論・根拠・リスクが表示されます。</div><details class="raw-result" id="rawResult" hidden><summary>APIの詳細データ</summary><pre class="result" id="result"></pre></details></div>
     </section>
   </div>
@@ -257,8 +257,8 @@ function renderReadable(data){const payload=data.result??data;resultView.classNa
 function makeCard(title,value){const card=document.createElement('section');card.className='result-card';if(typeof value==='string'&&value.length>120)card.classList.add('wide');const heading=document.createElement('h3');heading.textContent=title;card.append(heading);if(Array.isArray(value)){const list=document.createElement('ul');(value.length?value:['なし']).forEach(item=>{const li=document.createElement('li');li.textContent=displayValue(item);list.append(li)});card.append(list)}else if(value&&typeof value==='object'){const dl=document.createElement('dl');Object.entries(value).forEach(([key,item])=>{const dt=document.createElement('dt');dt.textContent=labelFor(key);const dd=document.createElement('dd');dd.textContent=displayValue(item);dl.append(dt,dd)});card.append(dl)}else{const p=document.createElement('p');const badge=document.createElement('span');badge.className='result-badge';badge.textContent=displayValue(value);p.append(badge);card.append(p)}return card}
 function errorText(data){if(Array.isArray(data?.detail))return data.detail.map(item=>`${labelFor(item.loc?.at(-1)||'入力')}: ${item.msg}`).join('\n');return data?.detail||data?.message||'処理を実行できませんでした。'}
 function showError(message,data=null){resultView.className='result-view error';resultView.textContent=message;rawResult.hidden=data===null;if(data!==null)result.textContent=JSON.stringify(data,null,2);document.querySelector('#statusMetric').textContent='ERROR'}
-run.onclick=async()=>{let payload;try{payload=JSON.parse(editor.value)}catch(e){showError('詳細な市場データの形式が正しくありません。');return}run.disabled=true;run.textContent=`${selectedTitle}を実行中...`;resultView.className='result-view empty';resultView.textContent='Gemmaが市場情報を分析しています。';rawResult.hidden=true;const start=performance.now();try{const response=await fetch(`kcbrain.php?proxy=run&endpoint=${encodeURIComponent(endpoint)}`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(payload)});const data=await response.json();document.querySelector('#statusMetric').textContent=String(response.status);document.querySelector('#latencyMetric').textContent=`${data.latency_ms??Math.round(performance.now()-start)} ms`;document.querySelector('#modelMetric').textContent=data.model||'Gemma';result.textContent=JSON.stringify(data,null,2);rawResult.hidden=false;if(response.ok)renderReadable(data);else showError(errorText(data),data)}catch(e){showError(e.message)}finally{run.disabled=false;run.textContent=`${selectedTitle}を実行`}};
-fetch('kcbrain.php?proxy=health',{cache:'no-store'}).then(r=>r.json()).then(d=>{const ok=Boolean(d.ok);document.querySelector('#healthDot').className='dot '+(ok?'ok':'bad');document.querySelector('#healthText').textContent=ok?`${d.model} READY`:'API OFFLINE'}).catch(()=>{document.querySelector('#healthDot').className='dot bad';document.querySelector('#healthText').textContent='API OFFLINE'});
+run.onclick=async()=>{let payload;try{payload=JSON.parse(editor.value)}catch(e){showError('詳細な市場データの形式が正しくありません。');return}run.disabled=true;run.textContent=`${selectedTitle}を実行中...`;resultView.className='result-view empty';resultView.textContent='選択したLLMが市場情報を分析しています。';rawResult.hidden=true;const start=performance.now();try{const response=await fetch(`kcbrain.php?proxy=run&endpoint=${encodeURIComponent(endpoint)}`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(payload)});const data=await response.json();document.querySelector('#statusMetric').textContent=String(response.status);document.querySelector('#latencyMetric').textContent=`${data.latency_ms??Math.round(performance.now()-start)} ms`;document.querySelector('#modelMetric').textContent=data.model||'LLM';result.textContent=JSON.stringify(data,null,2);rawResult.hidden=false;if(response.ok)renderReadable(data);else showError(errorText(data),data)}catch(e){showError(e.message)}finally{run.disabled=false;run.textContent=`${selectedTitle}を実行`}};
+fetch('kcbrain.php?proxy=health',{cache:'no-store'}).then(r=>r.json()).then(d=>{const ok=Boolean(d.ok);document.querySelector('#healthDot').className='dot '+(ok?'ok':'bad');document.querySelector('#healthText').textContent=ok?`${d.provider} / ${d.model} READY`:'API OFFLINE';if(ok)document.querySelector('#modelMetric').textContent=d.model}).catch(()=>{document.querySelector('#healthDot').className='dot bad';document.querySelector('#healthText').textContent='API OFFLINE'});
 </script>
 <?php endif; ?>
 </body>
