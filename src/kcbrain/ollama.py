@@ -100,6 +100,46 @@ class CryptoBrain:
             result = self.generate_json(repair_prompt)
         return validate_result(task, result)
 
+    def chat(
+        self,
+        messages: list[dict[str, str]],
+        temperature: float = 0.5,
+        max_tokens: int = 8192,
+    ) -> dict[str, Any]:
+        input_chars = sum(len(message.get("role", "")) + len(message.get("content", "")) for message in messages)
+        if input_chars > self.config.max_input_chars:
+            raise BrainError(f"input exceeds {self.config.max_input_chars} characters")
+        payload = {
+            "model": self.config.ollama_model,
+            "messages": messages,
+            "stream": False,
+            "think": False,
+            "options": {"temperature": temperature, "num_predict": max_tokens},
+        }
+        try:
+            with self._lock:
+                response = requests.post(
+                    f"{self.config.ollama_url}/api/chat",
+                    json=payload,
+                    timeout=self.config.ollama_timeout,
+                )
+            response.raise_for_status()
+            body = response.json()
+        except requests.RequestException as exc:
+            raise BrainError(f"Ollama request failed: {exc}") from exc
+        content = str((body.get("message") or {}).get("content") or "").strip()
+        if not content:
+            reason = str(body.get("done_reason") or "unknown")
+            raise BrainError(f"Gemma returned an empty response (done_reason={reason})")
+        prompt_tokens = int(body.get("prompt_eval_count") or 0)
+        completion_tokens = int(body.get("eval_count") or 0)
+        return {
+            "content": content,
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        }
+
     def generate_json(self, prompt: str, max_tokens: int = 2200) -> dict[str, Any]:
         if len(prompt) > self.config.max_input_chars:
             raise BrainError(f"input exceeds {self.config.max_input_chars} characters")

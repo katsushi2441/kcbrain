@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -118,3 +118,52 @@ class BrainResponse(BaseModel):
     model: str
     latency_ms: int
     result: dict[str, Any]
+
+
+class ChatMessage(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str = Field(min_length=1)
+
+
+class ChatCompletionRequest(BaseModel):
+    model: str = Field(default="gemma4:12b-it-qat", min_length=1, max_length=120)
+    messages: list[ChatMessage] = Field(min_length=1, max_length=100)
+    temperature: float = Field(default=0.5, ge=0, le=2)
+    max_tokens: int | None = Field(default=None, ge=1, le=32768)
+    max_completion_tokens: int | None = Field(default=None, ge=1, le=32768)
+    stream: bool = False
+
+    @model_validator(mode="after")
+    def reject_streaming(self) -> "ChatCompletionRequest":
+        if self.stream:
+            raise ValueError("streaming is not supported")
+        return self
+
+    def output_token_limit(self) -> int:
+        return self.max_completion_tokens or self.max_tokens or 8192
+
+
+class ChatCompletionMessage(BaseModel):
+    role: Literal["assistant"] = "assistant"
+    content: str
+
+
+class ChatCompletionChoice(BaseModel):
+    index: int = 0
+    message: ChatCompletionMessage
+    finish_reason: str = "stop"
+
+
+class ChatCompletionUsage(BaseModel):
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
+class ChatCompletionResponse(BaseModel):
+    id: str
+    object: Literal["chat.completion"] = "chat.completion"
+    created: int
+    model: str
+    choices: list[ChatCompletionChoice]
+    usage: ChatCompletionUsage

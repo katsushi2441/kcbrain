@@ -12,6 +12,12 @@ Kurage Crypto Brain exposes structured crypto-market intelligence from five pinn
 
 Every response identifies the upstream repository, pinned commit, license, and source feature. There are no silent model or template fallbacks.
 
+## NOFX integration
+
+`POST /v1/chat/completions` is an OpenAI-compatible entry point for the market context, strategy prompt, and output contract produced by NOFX. kcbrain returns the model content unchanged; NOFX remains responsible for decision validation, risk controls, exchange connectivity, and order execution.
+
+Select `Kurage Crypto Brain` as the AI model in NOFX and enter the same `KCBRAIN_API_TOKEN` in the API key field. When both services run on the same host, the default endpoint and model name work without customization.
+
 ## Market intelligence APIs
 
 - `POST /v1/market/opportunity-ranking`

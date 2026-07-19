@@ -26,6 +26,12 @@
 - `POST /v1/review/trade`
 - `POST /v1/analyze/full`
 
+## NOFX integration
+
+`POST /v1/chat/completions`は、NOFXが生成した市場データ、戦略プロンプト、出力契約をGemma 4へ渡すOpenAI互換入口です。kcbrainは応答本文を加工せず返し、NOFX側が判断JSONの検証、リスク制御、取引所接続、注文実行を担当します。
+
+NOFXのAIモデル設定で`Kurage Crypto Brain`を選び、kcbrainと同じ`KCBRAIN_API_TOKEN`をAPI Key欄へ設定します。同一ホストで動かす場合、接続先とモデル名は既定値のままで利用できます。
+
 ## Market intelligence APIs
 
 - `POST /v1/market/opportunity-ranking` - 複数銘柄のリスク調整後機会ランキング

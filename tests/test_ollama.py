@@ -2,6 +2,7 @@ import pytest
 
 from unittest.mock import Mock
 
+from kcbrain.config import Settings
 from kcbrain.ollama import BrainError, CryptoBrain, extract_json_object, validate_result
 from kcbrain.schemas import MarketIntelligenceRequest
 
@@ -59,3 +60,39 @@ def test_analyze_rejects_incomplete_repair():
 
     with pytest.raises(BrainError, match="market_summary, missing_data"):
         brain.analyze("market_opportunity_ranking", request)
+
+
+def test_chat_calls_ollama_without_thinking(monkeypatch):
+    config = Settings(
+        host="127.0.0.1",
+        port=18328,
+        api_token="secret",
+        allowed_client_ips=frozenset({"127.0.0.1"}),
+        ollama_url="http://ollama.test",
+        ollama_model="gemma4:12b-it-qat",
+        ollama_timeout=30,
+        max_input_chars=1000,
+    )
+    brain = CryptoBrain(config)
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "message": {"role": "assistant", "content": "decision"},
+        "prompt_eval_count": 11,
+        "eval_count": 7,
+    }
+    post = Mock(return_value=response)
+    monkeypatch.setattr("kcbrain.ollama.requests.post", post)
+
+    result = brain.chat([{"role": "user", "content": "BTC"}], temperature=0.3, max_tokens=900)
+
+    assert result == {
+        "content": "decision",
+        "prompt_tokens": 11,
+        "completion_tokens": 7,
+        "total_tokens": 18,
+    }
+    payload = post.call_args.kwargs["json"]
+    assert payload["think"] is False
+    assert payload["stream"] is False
+    assert payload["options"] == {"temperature": 0.3, "num_predict": 900}

@@ -41,6 +41,70 @@ def test_post_requires_token(monkeypatch):
     assert response.status_code == 401
 
 
+def test_chat_completions_returns_openai_contract(monkeypatch):
+    monkeypatch.setattr(api.settings, "api_token", "secret")
+    monkeypatch.setattr(
+        api.brain,
+        "chat",
+        lambda messages, temperature, max_tokens: {
+            "content": '<reasoning>evidence</reasoning>{"action":"hold"}',
+            "prompt_tokens": 12,
+            "completion_tokens": 8,
+            "total_tokens": 20,
+        },
+    )
+    response = TestClient(api.app).post(
+        "/v1/chat/completions",
+        headers={"X-KCBrain-Token": "secret"},
+        json={
+            "model": "kcbrain-gemma4",
+            "messages": [
+                {"role": "system", "content": "Trade safely."},
+                {"role": "user", "content": "Evaluate BTC."},
+            ],
+            "temperature": 0.4,
+            "max_tokens": 4096,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["object"] == "chat.completion"
+    assert body["model"] == api.settings.ollama_model
+    assert body["choices"][0]["message"]["content"].endswith('{"action":"hold"}')
+    assert body["usage"]["total_tokens"] == 20
+
+
+def test_chat_completions_accepts_bearer_token(monkeypatch):
+    monkeypatch.setattr(api.settings, "api_token", "secret")
+    monkeypatch.setattr(
+        api.brain,
+        "chat",
+        lambda messages, temperature, max_tokens: {
+            "content": "ok",
+            "prompt_tokens": 1,
+            "completion_tokens": 1,
+            "total_tokens": 2,
+        },
+    )
+    response = TestClient(api.app).post(
+        "/v1/chat/completions",
+        headers={"Authorization": "Bearer secret"},
+        json={"messages": [{"role": "user", "content": "ping"}]},
+    )
+    assert response.status_code == 200
+
+
+def test_chat_completions_rejects_streaming(monkeypatch):
+    monkeypatch.setattr(api.settings, "api_token", "secret")
+    response = TestClient(api.app).post(
+        "/v1/chat/completions",
+        headers={"X-KCBrain-Token": "secret"},
+        json={"messages": [{"role": "user", "content": "ping"}], "stream": True},
+    )
+    assert response.status_code == 422
+
+
 def test_technical_returns_structured_result(monkeypatch):
     monkeypatch.setattr(api.settings, "api_token", "secret")
     monkeypatch.setattr(

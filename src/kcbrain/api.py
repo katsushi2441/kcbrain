@@ -11,7 +11,17 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from . import __version__
 from .config import settings
 from .ollama import BrainError, CryptoBrain
-from .schemas import BrainResponse, CryptoBrainRequest, MarketIntelligenceRequest, normalize_symbol
+from .schemas import (
+    BrainResponse,
+    ChatCompletionChoice,
+    ChatCompletionMessage,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ChatCompletionUsage,
+    CryptoBrainRequest,
+    MarketIntelligenceRequest,
+    normalize_symbol,
+)
 from .vendor_adapters import (
     AiHedgeFundCryptoAdapter,
     CryptoTradingAgentsAdapter,
@@ -47,10 +57,16 @@ async def restrict_write_clients(request: Request, call_next: Callable):
     return await call_next(request)
 
 
-def require_token(x_kcbrain_token: str = Header(default="")) -> None:
+def require_token(
+    x_kcbrain_token: str = Header(default=""),
+    authorization: str = Header(default=""),
+) -> None:
     if not settings.api_token:
         raise HTTPException(503, "KCBRAIN_API_TOKEN is not configured")
-    if not hmac.compare_digest(x_kcbrain_token, settings.api_token):
+    supplied_token = x_kcbrain_token
+    if not supplied_token and authorization.lower().startswith("bearer "):
+        supplied_token = authorization[7:].strip()
+    if not hmac.compare_digest(supplied_token, settings.api_token):
         raise HTTPException(401, "invalid API token")
 
 
@@ -90,6 +106,7 @@ def meta() -> dict:
             "/v1/market/anomaly",
             "/v1/market/liquidation-risk",
             "/v1/signal/pair/{symbol}",
+            "/v1/chat/completions",
             "/v1/vendor/ai-hedge-fund-crypto/portfolio",
             "/v1/vendor/crypto-trading-agents/debate",
             "/v1/vendor/vibe-trading/research",
@@ -103,11 +120,42 @@ def meta() -> dict:
                 "Only the LLM transport is replaced with local Gemma 4."
             ),
             "nofx": (
-                "NoFX is not linked into this service because its AGPL runtime includes exchange execution. "
-                "Its architecture is documented as research context only."
+                "NoFX can use /v1/chat/completions as its kcbrain model provider. Exchange execution, "
+                "credentials, prompts, parsing, and risk controls remain in NoFX."
             ),
         },
     }
+
+
+@app.post(
+    "/v1/chat/completions",
+    response_model=ChatCompletionResponse,
+    dependencies=[Depends(require_token)],
+)
+def chat_completions(payload: ChatCompletionRequest) -> ChatCompletionResponse:
+    try:
+        result = brain.chat(
+            [message.model_dump() for message in payload.messages],
+            temperature=payload.temperature,
+            max_tokens=payload.output_token_limit(),
+        )
+    except BrainError as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return ChatCompletionResponse(
+        id=f"chatcmpl-{uuid.uuid4().hex[:16]}",
+        created=int(time.time()),
+        model=settings.ollama_model,
+        choices=[
+            ChatCompletionChoice(
+                message=ChatCompletionMessage(content=result["content"]),
+            )
+        ],
+        usage=ChatCompletionUsage(
+            prompt_tokens=result["prompt_tokens"],
+            completion_tokens=result["completion_tokens"],
+            total_tokens=result["total_tokens"],
+        ),
+    )
 
 
 def run(task: str, endpoint: str, payload: CryptoBrainRequest | MarketIntelligenceRequest) -> BrainResponse:
