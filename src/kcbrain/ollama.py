@@ -63,6 +63,10 @@ def validate_result(task: str, result: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def missing_result_keys(task: str, result: dict[str, Any]) -> set[str]:
+    return REQUIRED_RESULT_KEYS[task] - set(result)
+
+
 class CryptoBrain:
     def __init__(self, config: Settings = settings) -> None:
         self.config = config
@@ -79,7 +83,22 @@ class CryptoBrain:
 
     def analyze(self, task: str, request: CryptoBrainRequest | MarketIntelligenceRequest) -> dict[str, Any]:
         evidence = request.compact_json()
-        return validate_result(task, self.generate_json(build_prompt(task, evidence)))
+        prompt = build_prompt(task, evidence)
+        result = self.generate_json(prompt)
+        missing = missing_result_keys(task, result)
+        if missing:
+            repair_prompt = (
+                f"{prompt}\n\n"
+                "PREVIOUS OUTPUT (INVALID)\n"
+                f"{json.dumps(result, ensure_ascii=False, separators=(',', ':'))}\n\n"
+                "REPAIR INSTRUCTION\n"
+                f"The previous JSON omitted these required top-level fields: {', '.join(sorted(missing))}. "
+                "Return one complete corrected JSON object. Preserve valid existing values, add every missing "
+                "field using only CALLER EVIDENCE, and list unavailable evidence explicitly in missing_data. "
+                "Do not return commentary or markdown."
+            )
+            result = self.generate_json(repair_prompt)
+        return validate_result(task, result)
 
     def generate_json(self, prompt: str, max_tokens: int = 2200) -> dict[str, Any]:
         if len(prompt) > self.config.max_input_chars:
