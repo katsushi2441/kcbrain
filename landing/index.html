@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kurage Crypto Brain — Five open-source trading intelligences, one metered brain</title>
-<meta name="description" content="19 crypto judgment skills built from vendored open-source trading intelligence (ai-hedge-fund-crypto, CryptoTradingAgents, Vibe-Trading, LLM_trader, HELM Agents) running on DeepSeek V4 Flash. Pay per call via x402 — USDC on Base. Judgment only: no exchange credentials, no order execution.">
+<meta name="description" content="19 crypto judgment skills built from vendored open-source trading intelligence (ai-hedge-fund-crypto, CryptoTradingAgents, Vibe-Trading, LLM_trader, HELM Agents) running on DeepSeek V4 Flash. Pay per call via x402 — USDC on Base or JPYC on Polygon. Judgment only: no exchange credentials, no order execution.">
 <link rel="canonical" href="https://kcbrain.exbridge.jp/">
 <link rel="alternate" hreflang="ja" href="https://kcbrain.exbridge.jp/kcbrain.html">
 <meta property="og:title" content="Kurage Crypto Brain — OSS trading intelligence as a metered x402 API">
@@ -128,8 +128,8 @@ footer a { color: var(--accent); font-weight: 700; }
       Kurage Crypto Brain vendors the LLM intelligence of five open-source crypto trading projects —
       <strong>ai-hedge-fund-crypto, CryptoTradingAgents, Vibe-Trading, LLM_trader, HELM Agents</strong> —
       pinned to exact commits with full attribution, and runs them on <strong>DeepSeek V4 Flash</strong>
-      (local Gemma 4 12B is also selectable). You pay per call via <strong>x402</strong> (USDC on Base):
-      no signup, no subscription — the 402 challenge <em>is</em> the onboarding. Judgment only: the API
+      (local Gemma 4 12B is also selectable). You pay per call via <strong>x402</strong> (USDC on Base,
+      or JPYC on Polygon): no signup, no subscription — the 402 challenge <em>is</em> the onboarding. Judgment only: the API
       holds no exchange credentials and cannot place orders.
     </p>
     <div class="cta-row">
@@ -219,7 +219,9 @@ footer a { color: var(--accent); font-weight: 700; }
 # → HTTP 402: {"maxAmountRequired":"1000", "payTo":"0x444f…", "network":"base", …}</pre>
     <p>The full catalog is machine-readable at
     <code>https://bittensorman.xyz/.well-known/x402.json</code> — 24 paths under <code>/kcbrain/</code>.
-    Also on <a href="https://x402.bankr.bot/0x444fadbd6e1fed0cfbf7613b6c9f91b9021eecbd/kcbrain" style="color:var(--accent);font-weight:700">Bankr</a>
+    JPYC rail: <code>https://exbridge.ddns.net:18331/kcbrain/…</code> (0.15 JPYC per call, 0.45 JPYC for
+    the chained multi-agent skills). Also on
+    <a href="https://x402.bankr.bot/0x444fadbd6e1fed0cfbf7613b6c9f91b9021eecbd/kcbrain" style="color:var(--accent);font-weight:700">Bankr</a>
     (single-call skills only, flat $0.001).</p>
   </div>
 </section>
@@ -228,17 +230,17 @@ footer a { color: var(--accent); font-weight: 700; }
   <h2>Pricing</h2>
   <p class="sub">Per call, settled on-chain. No accounts, no minimums.</p>
   <div class="tscroll"><table>
-    <tr><th>Skill group</th><th>Examples</th><th>USDC (Base)</th></tr>
-    <tr><td>Core crypto judgment (9)</td><td>technical / onchain / sentiment / debate / decide / risk / portfolio / review / full</td><td>$0.001</td></tr>
-    <tr><td>Market intelligence (5)</td><td>opportunity/flow ranking, anomaly, liquidation-risk, pair signal</td><td>$0.001</td></tr>
-    <tr><td>Single-call vendor (2)</td><td>ai-hedge-fund-crypto/portfolio, llm-trader/analyze</td><td>$0.001</td></tr>
-    <tr><td><strong>Multi-agent chained vendor (3)</strong></td><td>crypto-trading-agents/debate, vibe-trading/research, helm-agents/consensus — 3-5 sequential calls</td><td><strong>$0.003</strong></td></tr>
+    <tr><th>Skill group</th><th>Examples</th><th>USDC (Base)</th><th>JPYC (Polygon)</th></tr>
+    <tr><td>Core crypto judgment (9)</td><td>technical / onchain / sentiment / debate / decide / risk / portfolio / review / full</td><td>$0.001</td><td>0.15 JPYC</td></tr>
+    <tr><td>Market intelligence (5)</td><td>opportunity/flow ranking, anomaly, liquidation-risk, pair signal</td><td>$0.001</td><td>0.15 JPYC</td></tr>
+    <tr><td>Single-call vendor (2)</td><td>ai-hedge-fund-crypto/portfolio, llm-trader/analyze</td><td>$0.001</td><td>0.15 JPYC</td></tr>
+    <tr><td><strong>Multi-agent chained vendor (3)</strong></td><td>crypto-trading-agents/debate, vibe-trading/research, helm-agents/consensus — 3-5 sequential calls</td><td><strong>$0.003</strong></td><td><strong>0.45 JPYC</strong></td></tr>
   </table></div>
 </section>
 
 <section>
   <h2>Stack</h2>
-  <p class="sub">FastAPI · DeepSeek V4 Flash (Gemma 4 12B via Ollama also selectable) · vendored OSS at pinned commits · x402 (USDC on Base) · Bankr · Coinbase CDP Bazaar</p>
+  <p class="sub">FastAPI · DeepSeek V4 Flash (Gemma 4 12B via Ollama also selectable) · vendored OSS at pinned commits · x402 (USDC on Base / JPYC on Polygon) · Bankr · Coinbase CDP Bazaar</p>
 </section>
 
 <footer>

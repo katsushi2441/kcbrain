@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kurage Crypto Brain — 5つのOSSトレーディング知能を、1つの従量課金の頭脳に</title>
-<meta name="description" content="人気OSS(ai-hedge-fund-crypto/CryptoTradingAgents/Vibe-Trading/LLM_trader/HELM Agents)のLLM知能をコミット固定でvendor化し、DeepSeek V4 Flashで動かす暗号資産判断API 19スキル。x402で1回ずつ支払い(USDC on Base)。判断のみ・取引所認証情報なし・注文実行なし。">
+<meta name="description" content="人気OSS(ai-hedge-fund-crypto/CryptoTradingAgents/Vibe-Trading/LLM_trader/HELM Agents)のLLM知能をコミット固定でvendor化し、DeepSeek V4 Flashで動かす暗号資産判断API 19スキル。x402で1回ずつ支払い(USDC on Base / JPYC on Polygon)。判断のみ・取引所認証情報なし・注文実行なし。">
 <link rel="canonical" href="https://kcbrain.exbridge.jp/kcbrain.html">
 <link rel="alternate" hreflang="en" href="https://kcbrain.exbridge.jp/">
 <meta property="og:title" content="Kurage Crypto Brain — OSSトレーディング知能を従量課金APIに">
@@ -128,7 +128,7 @@ footer a { color: var(--accent); font-weight: 700; }
       Kurage Crypto Brainは、GitHubの暗号資産トレーディングOSS——<strong>ai-hedge-fund-crypto・
       CryptoTradingAgents・Vibe-Trading・LLM_trader・HELM Agents</strong>——のLLM知能をコミット固定・
       出典明記でvendor化し、<strong>DeepSeek V4 Flash</strong>で動かす判断APIです(ローカルGemma 4 12Bも
-      設定で選択可)。支払いは<strong>x402</strong>で1コールごと(USDC on Base)。会員登録もサブスクも
+      設定で選択可)。支払いは<strong>x402</strong>で1コールごと(USDC on Base / JPYC on Polygon)。会員登録もサブスクも
       不要——402チャレンジそのものがオンボーディングです。判断のみを返し、取引所認証情報を持たず、
       注文も実行しません。
     </p>
@@ -218,6 +218,8 @@ footer a { color: var(--accent); font-weight: 700; }
 # → HTTP 402: {"maxAmountRequired":"1000", "payTo":"0x444f…", "network":"base", …}</pre>
     <p>全カタログは機械可読で公開:
     <code>https://bittensorman.xyz/.well-known/x402.json</code> ——<code>/kcbrain/</code>配下に24パス。
+    JPYCレール: <code>https://exbridge.ddns.net:18331/kcbrain/…</code>(1回0.15 JPYC、
+    マルチエージェント連鎖スキルは0.45 JPYC)。
     <a href="https://x402.bankr.bot/0x444fadbd6e1fed0cfbf7613b6c9f91b9021eecbd/kcbrain" style="color:var(--accent);font-weight:700">Bankr</a>
     からも利用可(単発判断のみ・一律$0.001)。</p>
   </div>
@@ -227,17 +229,17 @@ footer a { color: var(--accent); font-weight: 700; }
   <h2>価格</h2>
   <p class="sub">1コールごとオンチェーン決済。アカウント不要・最低利用額なし。</p>
   <div class="tscroll"><table>
-    <tr><th>スキル群</th><th>例</th><th>USDC (Base)</th></tr>
-    <tr><td>暗号資産判断コア (9)</td><td>technical / onchain / sentiment / debate / decide / risk / portfolio / review / full</td><td>$0.001</td></tr>
-    <tr><td>マーケットインテリジェンス (5)</td><td>opportunity/flowランキング・異常検知・清算リスク・ペアシグナル</td><td>$0.001</td></tr>
-    <tr><td>単発vendor (2)</td><td>ai-hedge-fund-crypto/portfolio, llm-trader/analyze</td><td>$0.001</td></tr>
-    <tr><td><strong>マルチエージェント連鎖vendor (3)</strong></td><td>crypto-trading-agents/debate, vibe-trading/research, helm-agents/consensus——3〜5回連鎖コール</td><td><strong>$0.003</strong></td></tr>
+    <tr><th>スキル群</th><th>例</th><th>USDC (Base)</th><th>JPYC (Polygon)</th></tr>
+    <tr><td>暗号資産判断コア (9)</td><td>technical / onchain / sentiment / debate / decide / risk / portfolio / review / full</td><td>$0.001</td><td>0.15 JPYC</td></tr>
+    <tr><td>マーケットインテリジェンス (5)</td><td>opportunity/flowランキング・異常検知・清算リスク・ペアシグナル</td><td>$0.001</td><td>0.15 JPYC</td></tr>
+    <tr><td>単発vendor (2)</td><td>ai-hedge-fund-crypto/portfolio, llm-trader/analyze</td><td>$0.001</td><td>0.15 JPYC</td></tr>
+    <tr><td><strong>マルチエージェント連鎖vendor (3)</strong></td><td>crypto-trading-agents/debate, vibe-trading/research, helm-agents/consensus——3〜5回連鎖コール</td><td><strong>$0.003</strong></td><td><strong>0.45 JPYC</strong></td></tr>
   </table></div>
 </section>
 
 <section>
   <h2>スタック</h2>
-  <p class="sub">FastAPI · DeepSeek V4 Flash(ローカルGemma 4 12B via Ollamaも選択可) · vendored OSS at pinned commits · x402 (USDC on Base) · Bankr · Coinbase CDP Bazaar</p>
+  <p class="sub">FastAPI · DeepSeek V4 Flash(ローカルGemma 4 12B via Ollamaも選択可) · vendored OSS at pinned commits · x402 (USDC on Base / JPYC on Polygon) · Bankr · Coinbase CDP Bazaar</p>
 </section>
 
 <footer>
