@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextvars
 import json
 import re
 import threading
@@ -14,6 +15,22 @@ from .schemas import CryptoBrainRequest, MarketIntelligenceRequest
 
 class BrainError(RuntimeError):
     pass
+
+
+# リクエスト単位のLLMプロバイダ上書き。既定は空("")=サービス設定(config.llm_provider)。
+# 課金レール(x402/JPYCゲートウェイ)だけが 'deepseek' を注入する。kfreqaiの毎時ジョブ
+# (kcbrain_shadow / kcbrain_review)等の直叩きはローカルGemmaのまま(2026-07-22:
+# 「x402以外はDeepSeekを使わない」方針)。
+REQUEST_PROVIDER: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "kcbrain_request_provider", default="")
+
+
+def resolve_provider(config: Settings = settings) -> str:
+    return REQUEST_PROVIDER.get() or config.llm_provider
+
+
+def resolve_model(config: Settings = settings) -> str:
+    return config.deepseek_model if resolve_provider(config) == "deepseek" else config.ollama_model
 
 
 REQUIRED_RESULT_KEYS = {
@@ -102,11 +119,11 @@ class CryptoBrain:
 
     @property
     def provider(self) -> str:
-        return self.config.llm_provider
+        return resolve_provider(self.config)
 
     @property
     def model(self) -> str:
-        return self.config.active_model
+        return resolve_model(self.config)
 
     def _deepseek_headers(self) -> dict[str, str]:
         if not self.config.deepseek_api_key:
@@ -168,10 +185,11 @@ class CryptoBrain:
         input_chars = sum(len(message.get("role", "")) + len(message.get("content", "")) for message in messages)
         if input_chars > self.config.max_input_chars:
             raise BrainError(f"input exceeds {self.config.max_input_chars} characters")
-        if self.config.llm_provider == "deepseek":
+        provider = resolve_provider(self.config)
+        if provider == "deepseek":
             return self._chat_deepseek(messages, temperature, max_tokens)
-        if self.config.llm_provider != "ollama":
-            raise BrainError("KCBRAIN_LLM_PROVIDER must be ollama or deepseek")
+        if provider != "ollama":
+            raise BrainError("LLM provider must be ollama or deepseek")
         payload = {
             "model": self.config.ollama_model,
             "messages": messages,
@@ -249,7 +267,8 @@ class CryptoBrain:
     def generate_json(self, prompt: str, max_tokens: int = 2200) -> dict[str, Any]:
         if len(prompt) > self.config.max_input_chars:
             raise BrainError(f"input exceeds {self.config.max_input_chars} characters")
-        if self.config.llm_provider == "deepseek":
+        provider = resolve_provider(self.config)
+        if provider == "deepseek":
             result = self._chat_deepseek(
                 [
                     {
@@ -263,8 +282,8 @@ class CryptoBrain:
                 response_format={"type": "json_object"},
             )
             return extract_json_object(result["content"])
-        if self.config.llm_provider != "ollama":
-            raise BrainError("KCBRAIN_LLM_PROVIDER must be ollama or deepseek")
+        if provider != "ollama":
+            raise BrainError("LLM provider must be ollama or deepseek")
         payload = {
             "model": self.config.ollama_model,
             "prompt": prompt,

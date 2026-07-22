@@ -10,7 +10,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from . import __version__
 from .config import settings
-from .ollama import BrainError, CryptoBrain
+from .ollama import REQUEST_PROVIDER, BrainError, CryptoBrain
 from .schemas import (
     BrainResponse,
     ChatCompletionChoice,
@@ -32,11 +32,34 @@ from .vendor_adapters import (
 )
 
 
+class ProviderMiddleware:
+    """リクエスト単位のLLMプロバイダをヘッダ X-KCBRAIN-Provider から contextvar に載せる。
+    課金レール(x402/JPYCゲートウェイ)だけが 'deepseek' を注入する。無指定・不正値はサービス
+    既定(config.llm_provider=ローカルGemma)。kfreqaiの毎時ジョブ(kcbrain_shadow/review)等の
+    直叩きはヘッダを付けないのでGemmaを使う。純粋ASGIミドルウェアなのでset値は同期エンドポイント
+    まで確実に伝播する。"""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http":
+            prov = ""
+            for key, value in scope.get("headers", []):
+                if key == b"x-kcbrain-provider":
+                    prov = value.decode("latin-1").strip().lower()
+                    break
+            REQUEST_PROVIDER.set(prov if prov in ("ollama", "deepseek") else "")
+        await self.app(scope, receive, send)
+
+
 app = FastAPI(
     title="Kurage Crypto Brain API",
     version=__version__,
-    description="Vendored crypto intelligence APIs with selectable LLM transport. No exchange execution.",
+    description="Vendored crypto intelligence APIs (local Gemma 4 by default; paid x402 rails "
+                "use DeepSeek). No exchange execution.",
 )
+app.add_middleware(ProviderMiddleware)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 brain = CryptoBrain(settings)
 ai_hedge_fund_crypto = AiHedgeFundCryptoAdapter(brain)
